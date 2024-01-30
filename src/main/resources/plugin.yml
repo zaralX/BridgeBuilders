@@ -1,0 +1,15 @@
+name: BridgeBuilders
+version: '${project.version}'
+main: ru.zaralx.bridgebuilders.BridgeBuilders
+api-version: '1.19'
+prefix: Bridge
+authors: [zaralX]
+description: I dont know
+website: https://zaralx.ru
+commands:
+  test:
+    description: "TEST COMMAND"
+    usage: /test
+    aliases: [t, te, tes]
+    permission: op
+    permission-message: You do not have permission

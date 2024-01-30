@@ -1,0 +1,237 @@
+package ru.zaralx.bridgebuilders.commons.npc.database;
+
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.minecraft.world.entity.Pose;
+import org.bukkit.Location;
+import org.bukkit.entity.Player;
+import ru.zaralx.bridgebuilders.BridgeBuilders;
+import ru.zaralx.bridgebuilders.commons.npc.CustomEquipment;
+import ru.zaralx.bridgebuilders.commons.npc.Replay;
+import ru.zaralx.bridgebuilders.commons.npc.database.models.*;
+import ru.zaralx.bridgebuilders.commons.npc.record.EquipmentRecord;
+import ru.zaralx.bridgebuilders.commons.npc.record.PoseRecord;
+import ru.zaralx.bridgebuilders.commons.npc.record.PositionRecord;
+import ru.zaralx.bridgebuilders.commons.npc.record.TickRecord;
+
+import java.io.File;
+import java.io.IOException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+public class RecordsDatabase {
+    private Connection _connection;
+    private final ReplayModel replayModel = new ReplayModel();
+    private final TickModel tickModel = new TickModel();
+    private final PositionModel positionModel = new PositionModel();
+    private final EquipmentModel equipmentModel = new EquipmentModel();
+    private final PoseModel poseModel = new PoseModel();
+    public final Logger logger = BridgeBuilders.getInstance().getLogger();
+
+    public Connection getConnection(){
+        return _connection;
+    }
+
+    public boolean isConnected(){
+        return _connection != null;
+    }
+
+    public void connect() {
+        logger.info("Initializing database..");
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            File dataFolder = new File(BridgeBuilders.getInstance().getDataFolder(), "records.db");
+            if (!dataFolder.exists()){
+                try {
+                    dataFolder.createNewFile();
+                } catch (IOException e) {
+                    BridgeBuilders.getInstance().getLogger().log(Level.SEVERE, "File write error: records.db");
+                }
+            }
+            _connection = DriverManager.getConnection("jdbc:sqlite:" + dataFolder);
+            initAllModels();
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void disconnect(){
+        if(isConnected()){
+            try {
+                _connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public Replay loadReplay(Player player, String name) {
+        try {
+            ResultSet replayRow = execute("SELECT * FROM Replays WHERE name = '"+name+"'");
+            if (replayRow == null) {
+                replayRow = execute("SELECT * FROM Replays WHERE id = "+name);
+                if (replayRow == null) {
+                    logger.severe("Failed to load replay '" + name + "' - Not found");
+                    return null;
+                }
+            }
+
+            List<TickRecord> records = new ArrayList<>();
+
+            ResultSet replayTicks = executeNoNext("SELECT * FROM Replay_Tick WHERE replay = "+replayRow.getInt("id"));
+
+            int id = 0;
+            while (replayTicks.next()) {
+                id++;
+
+                PositionRecord positionRecord = null;
+                EquipmentRecord equipmentRecord = null;
+                PoseRecord poseRecord = null;
+
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("§d"+id+"/"+replayRow.getInt("totalTicks")));
+
+                ResultSet positionRow = execute("SELECT * FROM Replay_Tick_Position WHERE id = "+replayTicks.getInt("position"));
+                ResultSet equipmentRow = execute("SELECT * FROM Replay_Tick_Equipment WHERE id = "+replayTicks.getInt("equipment"));
+                ResultSet poseRow = execute("SELECT * FROM Replay_Tick_Pose WHERE id = "+replayTicks.getInt("pose"));
+
+                if (positionRow != null) {
+                    positionRecord = new PositionRecord(new Location(player.getWorld(), positionRow.getDouble("x"), positionRow.getDouble("y"), positionRow.getDouble("z"), positionRow.getFloat("yaw"), positionRow.getFloat("pitch")));
+                }
+                if (equipmentRow != null) {
+                    equipmentRecord = new EquipmentRecord(new CustomEquipment(
+                            equipmentRow.getString("HAND_material"),
+                            equipmentRow.getString("OFF_HAND_material"),
+                            equipmentRow.getString("HELMET_material"),
+                            equipmentRow.getString("CHESTPLATE_material"),
+                            equipmentRow.getString("LEGGINGS_material"),
+                            equipmentRow.getString("BOOTS_material")
+                    ));
+                }
+                if (poseRow != null) {
+                    poseRecord = new PoseRecord(Pose.valueOf(poseRow.getString("pose")));
+                }
+
+                records.add(new TickRecord(
+                        positionRecord,
+                        equipmentRecord,
+                        poseRecord
+                ));
+            }
+
+            return new Replay(replayRow.getString("name"), records, false);
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public boolean saveNewReplay(Player player, String name, List<TickRecord> records) {
+        if (records.isEmpty()) {
+            player.sendMessage("Failed save replay '"+name+"' - RecordTicks size is 0");
+            logger.severe("Failed save replay '"+name+"' - RecordTicks size is 0");
+            return false;
+        }
+
+        try {
+            ResultSet replayExists = execute("SELECT * FROM Replays WHERE name = '"+name+"'");
+            if (replayExists != null) {
+                player.sendMessage("Failed save replay '"+name+"' - Replay already exists");
+                return false;
+            }
+            int replayId = executeUpdateWithGeneratedId("INSERT INTO Replays(id, name, totalTicks) VALUES (null, '"+name+"', "+records.size()+")");
+
+            int tick = 0;
+            for (TickRecord record : records) {
+                tick++;
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("Saving record "+name+" "+tick+"/"+records.size()+" ticks"));
+                logger.info("Saving record "+name+" "+tick+"/"+records.size()+" ticks");
+                buildTickQuery(replayId, record);
+            }
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        return true;
+    }
+
+    private void buildTickQuery(int replayId, TickRecord tickRecord) throws SQLException, ClassNotFoundException {
+        PositionRecord positionRecord = tickRecord.getPositionRecord();
+        Location positionRecordLocation = positionRecord.getLocation();
+        EquipmentRecord equipmentRecord = tickRecord.getEquipmentRecord();
+        PoseRecord poseRecord = tickRecord.getPoseRecord();
+        int positionId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Position(id, replay, x, y, z, yaw, pitch) VALUES (null, "
+                +replayId+", "
+                +positionRecordLocation.getX()+", "
+                +positionRecordLocation.getY()+", "
+                +positionRecordLocation.getZ()+", "
+                +positionRecordLocation.getYaw()+", "
+                +positionRecordLocation.getPitch()+
+                ");");
+        int equipmentId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Equipment(id, replay, HAND_material, OFF_HAND_material, HELMET_material, CHESTPLATE_material, LEGGINGS_material, BOOTS_material) VALUES (null, "
+                +replayId+", "
+                +"'"+equipmentRecord.getHand().getType()+"', "
+                +"'"+equipmentRecord.getOffHand().getType()+"', "
+                +"'"+equipmentRecord.getHelmet().getType()+"', "
+                +"'"+equipmentRecord.getChestplate().getType()+"', "
+                +"'"+equipmentRecord.getLeggings().getType()+"', "
+                +"'"+equipmentRecord.getBoots().getType()+
+                "');");
+        int poseId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Pose(id, replay, pose) VALUES (null, "
+                +replayId+", '"
+                +poseRecord.getPose().toString()+
+                "');");
+        executeUpdate("INSERT INTO Replay_Tick(id, replay, position, equipment, pose) VALUES (null, "
+                +replayId+", "+
+                positionId+", "+
+                equipmentId+", "+
+                poseId +
+                ");");
+    }
+
+    public void initAllModels() {
+        replayModel.init();
+        tickModel.init();
+        positionModel.init();
+        equipmentModel.init();
+        poseModel.init();
+    }
+
+    public ResultSet executeNoNext(String query) throws SQLException, ClassNotFoundException {
+        Statement statement = _connection.createStatement();
+        return statement.executeQuery(query);
+    }
+
+    public ResultSet execute(String query) throws SQLException, ClassNotFoundException {
+        if(!isConnected() || !_connection.isValid(10)) connect();
+        Statement statement = _connection.createStatement();
+        ResultSet result = statement.executeQuery(query);
+        if(result.next()) return result;
+        else return null;
+    }
+
+    public void executeUpdate(String query) throws SQLException, ClassNotFoundException {
+        if(!isConnected() || !_connection.isValid(10)) connect();
+        Statement statement = _connection.createStatement();
+        statement.executeUpdate(query);
+        statement.close();
+    }
+
+    public int executeUpdateWithGeneratedId(String query) throws SQLException, ClassNotFoundException {
+        if (!isConnected() || !_connection.isValid(10)) connect();
+        Statement statement = _connection.createStatement();
+        statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+
+        ResultSet generatedKeys = statement.getGeneratedKeys();
+
+        int generatedId = -1;
+        if (generatedKeys.next()) {
+            generatedId = generatedKeys.getInt(1);
+        }
+
+        statement.close();
+        return generatedId;
+    }
+}
