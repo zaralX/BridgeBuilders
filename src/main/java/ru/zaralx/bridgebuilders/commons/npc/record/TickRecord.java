@@ -14,6 +14,7 @@ public class TickRecord {
     private final PoseRecord poseRecord;
     private BlockPlaceRecord blockPlaceRecord;
     private BlockDestroyRecord blockDestroyRecord;
+    private BlockInteractRecord blockInteractRecord;
 
     public TickRecord(PositionRecord positionRecord, EquipmentRecord equipmentRecord, PoseRecord poseRecord) {
         this.positionRecord = positionRecord;
@@ -21,12 +22,13 @@ public class TickRecord {
         this.poseRecord = poseRecord;
     }
 
-    public TickRecord(PositionRecord positionRecord, EquipmentRecord equipmentRecord, PoseRecord poseRecord, BlockPlaceRecord blockPlaceRecord, BlockDestroyRecord blockDestroyRecord) {
+    public TickRecord(PositionRecord positionRecord, EquipmentRecord equipmentRecord, PoseRecord poseRecord, BlockPlaceRecord blockPlaceRecord, BlockDestroyRecord blockDestroyRecord, BlockInteractRecord blockInteractRecord) {
         this.positionRecord = positionRecord;
         this.equipmentRecord = equipmentRecord;
         this.poseRecord = poseRecord;
         this.blockPlaceRecord = blockPlaceRecord;
         this.blockDestroyRecord = blockDestroyRecord;
+        this.blockInteractRecord = blockInteractRecord;
     }
 
     public void animate(BaseNPC npc) {
@@ -37,6 +39,8 @@ public class TickRecord {
             blockPlaceRecord.execute(npc);
         if (blockDestroyRecord != null)
             blockDestroyRecord.execute(npc);
+        if (blockInteractRecord != null)
+            blockInteractRecord.execute(npc);
     }
 
     public PositionRecord getPositionRecord() {
@@ -59,6 +63,10 @@ public class TickRecord {
         return blockDestroyRecord;
     }
 
+    public BlockInteractRecord getBlockInteractRecord() {
+        return blockInteractRecord;
+    }
+
     public TickRecord setBlockPlaceRecord(BlockPlaceRecord blockPlaceRecord) {
         this.blockPlaceRecord = blockPlaceRecord;
         return this;
@@ -66,6 +74,11 @@ public class TickRecord {
 
     public TickRecord setBlockDestroyRecord(BlockDestroyRecord blockDestroyRecord) {
         this.blockDestroyRecord = blockDestroyRecord;
+        return this;
+    }
+
+    public TickRecord setBlockInteractRecord(BlockInteractRecord blockInteractRecord) {
+        this.blockInteractRecord = blockInteractRecord;
         return this;
     }
 

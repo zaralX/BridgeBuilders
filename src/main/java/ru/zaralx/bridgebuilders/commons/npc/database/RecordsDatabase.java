@@ -29,6 +29,7 @@ public class RecordsDatabase {
     private final PoseModel poseModel = new PoseModel();
     private final BlockPlaceModel blockPlaceModel = new BlockPlaceModel();
     private final BlockDestroyModel blockDestroyModel = new BlockDestroyModel();
+    private final BlockInteractModel blockInteractModel = new BlockInteractModel();
     public final Logger logger = BridgeBuilders.getInstance().getLogger();
 
     public Connection getConnection(){
@@ -93,6 +94,7 @@ public class RecordsDatabase {
                 PoseRecord poseRecord = null;
                 BlockPlaceRecord blockPlaceRecord = null;
                 BlockDestroyRecord blockDestroyRecord = null;
+                BlockInteractRecord blockInteractRecord = null;
 
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("§d"+id+"/"+replayRow.getInt("totalTicks")));
 
@@ -101,6 +103,7 @@ public class RecordsDatabase {
                 ResultSet poseRow = execute("SELECT * FROM Replay_Tick_Pose WHERE id = "+replayTicks.getInt("pose"));
                 ResultSet placeBlockRow = execute("SELECT * FROM Replay_Tick_Block_Place WHERE id = "+replayTicks.getInt("place_block"));
                 ResultSet destroyBlockRow = execute("SELECT * FROM Replay_Tick_Block_Destroy WHERE id = "+replayTicks.getInt("destroy_block"));
+                ResultSet interactBlockRow = execute("SELECT * FROM Replay_Tick_Block_Interact WHERE id = "+replayTicks.getInt("interact_block"));
 
                 if (positionRow != null) {
                     positionRecord = new PositionRecord(new Location(player.getWorld(), positionRow.getDouble("x"), positionRow.getDouble("y"), positionRow.getDouble("z"), positionRow.getFloat("yaw"), positionRow.getFloat("pitch")));
@@ -131,13 +134,24 @@ public class RecordsDatabase {
                             destroyBlockRow.getDouble("z")
                     ));
                 }
+                if (interactBlockRow != null) {
+                    blockInteractRecord = new BlockInteractRecord(
+                         new Location(player.getWorld(),
+                            interactBlockRow.getDouble("x"),
+                            interactBlockRow.getDouble("y"),
+                            interactBlockRow.getDouble("z")
+                        ),
+                        Bukkit.createBlockData(interactBlockRow.getString("new_block_data"))
+                    );
+                }
 
                 records.add(new TickRecord(
                         positionRecord,
                         equipmentRecord,
                         poseRecord,
                         blockPlaceRecord,
-                        blockDestroyRecord
+                        blockDestroyRecord,
+                        blockInteractRecord
                 ));
             }
 
@@ -189,6 +203,10 @@ public class RecordsDatabase {
         Location blockDestroyLocation = null;
         if (blockDestroyRecord != null)
             blockDestroyLocation = blockDestroyRecord.getLocation();
+        BlockInteractRecord blockInteractRecord = tickRecord.getBlockInteractRecord();
+        Location blockInteractLocation = null;
+        if (blockInteractRecord != null)
+            blockInteractLocation = blockInteractRecord.getLocation();
 
         int positionId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Position(id, replay, x, y, z, yaw, pitch) VALUES (null, "
                 + replayId + ", "
@@ -231,13 +249,24 @@ public class RecordsDatabase {
                     + blockDestroyLocation.getZ() +
                     ");");
         }
-        executeUpdate("INSERT INTO Replay_Tick(id, replay, position, equipment, pose, place_block, destroy_block) VALUES (null, "
+        int interactBlockId = -1;
+        if (blockInteractLocation != null) {
+            interactBlockId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Block_Interact(id, replay, x, y, z, new_block_data) VALUES (null, "
+                    + replayId + ", "
+                    + blockInteractLocation.getX() + ", "
+                    + blockInteractLocation.getY() + ", "
+                    + blockInteractLocation.getZ() + ", "
+                    + "'" + blockInteractRecord.getBlockData().getAsString() + "'" +
+                    ");");
+        }
+        executeUpdate("INSERT INTO Replay_Tick(id, replay, position, equipment, pose, place_block, destroy_block, interact_block) VALUES (null, "
                 + replayId + ", "
                 + positionId + ", "
                 + equipmentId + ", "
                 + poseId + ", "
                 + placeBlockId + ", "
-                + destroyBlockId +
+                + destroyBlockId + ", "
+                + interactBlockId +
                 ");");
     }
 
@@ -249,6 +278,7 @@ public class RecordsDatabase {
         poseModel.init();
         blockPlaceModel.init();
         blockDestroyModel.init();
+        blockInteractModel.init();
     }
 
     public ResultSet executeNoNext(String query) throws SQLException, ClassNotFoundException {
