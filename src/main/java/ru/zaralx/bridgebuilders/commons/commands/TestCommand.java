@@ -45,7 +45,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                         } else if (args[1].equals("play")) {
                             Replay replay = replayManager.getReplay(args[2]);
 
-                            replay.getNpc().initForAllOnline();
+                            replay.getNpc().initForAllOnline(true);
                             replay.start();
                             sender.sendMessage("§aResumed");
                         } else if (args[1].equals("pause")) {
@@ -66,6 +66,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                                 return true;
                             }
                             replayManager.addReplay(replay);
+                            replay.getNpc().initForAllOnline(false);
                             sender.sendMessage("§aLoaded");
                         }
             } else sender.sendMessage("§cNeed arguments");

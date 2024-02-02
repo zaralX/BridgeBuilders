@@ -28,7 +28,7 @@ import java.util.UUID;
 
 public class BaseNPC {
     private Location location;
-    private String displayName = "NPC";
+    private String displayName;
     private Skin skin;
     private ItemStack item;
     private ServerPlayer serverPlayer;
@@ -36,21 +36,32 @@ public class BaseNPC {
     private Pose pose = Pose.STANDING;
     private ServerGamePacketListenerImpl packetListener;
     private List<BukkitTask> bukkitTasks = new ArrayList<>();
-    private List<Player> showsFor = new ArrayList<>();
+    private final List<Player> showsFor = new ArrayList<>();
 
     public BaseNPC(String displayName, Location location) {
         this.location = location;
         this.displayName = displayName;
     }
 
-    public void initForAllOnline() {
+    public BaseNPC(String displayName, Location location, Skin skin) {
+        this.location = location;
+        this.displayName = displayName;
+        this.skin = skin;
+    }
+
+    public void initForAllOnline(boolean ignoreShows) {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            init(player, "NPC");
+            if (!ignoreShows && !showsFor.contains(player)) continue;
+            init(player);
             showsFor.add(player);
         }
     }
 
-    private void init(Player player, String displayName) {
+    public void removeShows(Player player) {
+        showsFor.remove(player);
+    }
+
+    public void init(Player player) {
         CraftPlayer craftPlayer = (CraftPlayer) player;
         this.serverPlayer = craftPlayer.getHandle();
         MinecraftServer server = serverPlayer.getServer();
@@ -58,7 +69,10 @@ public class BaseNPC {
 
         GameProfile gameProfile = new GameProfile(UUID.randomUUID(), displayName);
         if (this.skin != null) {
-            gameProfile.getProperties().put("textures", new Property("textures", skin.getTexture(), skin.getSignature()));
+            if (!this.skin.getSignature().isEmpty())
+                gameProfile.getProperties().put("textures", new Property("textures", skin.getTexture(), skin.getSignature()));
+            else
+                gameProfile.getProperties().put("textures", new Property("textures", skin.getTexture()));
         }
 
         this.npc = new ServerPlayer(server, level, gameProfile);

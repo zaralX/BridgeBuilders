@@ -74,11 +74,13 @@ public class RecordsDatabase {
         try {
             ResultSet replayRow = execute("SELECT * FROM Replays WHERE name = '"+name+"'");
             if (replayRow == null) {
-                replayRow = execute("SELECT * FROM Replays WHERE id = "+name);
-                if (replayRow == null) {
-                    logger.severe("Failed to load replay '" + name + "' - Not found");
-                    return null;
-                }
+                logger.severe("Failed to load replay '" + name + "' - Not found");
+                return null;
+            }
+
+            if (BridgeBuilders.getInstance().getReplayManager().getReplay(name) != null) {
+                logger.severe("Failed to load replay '" + name + "' - Already loaded");
+                return null;
             }
 
             List<TickRecord> records = new ArrayList<>();

@@ -26,6 +26,10 @@ public class ReplayManager {
         this.recordingReplays.remove(replay);
     }
 
+    public List<Replay> getReplays() {
+        return replays;
+    }
+
     public Replay getReplay(String name) {
         return replays.stream()
                 .filter(replay -> replay.getName().equals(name))

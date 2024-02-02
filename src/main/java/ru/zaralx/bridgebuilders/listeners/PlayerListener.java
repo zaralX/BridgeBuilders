@@ -11,10 +11,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerBucketEmptyEvent;
-import org.bukkit.event.player.PlayerBucketFillEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
+import ru.zaralx.bridgebuilders.commons.npc.Replay;
 import ru.zaralx.bridgebuilders.commons.npc.ReplayInRecording;
 import ru.zaralx.bridgebuilders.commons.npc.record.BlockDestroyRecord;
 import ru.zaralx.bridgebuilders.commons.npc.record.BlockInteractRecord;
@@ -23,6 +22,20 @@ import ru.zaralx.bridgebuilders.commons.npc.record.BlockPlaceRecord;
 public class PlayerListener implements Listener {
     public PlayerListener() {
         Bukkit.getPluginManager().registerEvents(this, BridgeBuilders.getInstance());
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        for (Replay replay : BridgeBuilders.getInstance().getReplayManager().getReplays()) {
+            replay.getNpc().init(event.getPlayer());
+        }
+    }
+
+    @EventHandler
+    public void onLeave(PlayerQuitEvent event) {
+        for (Replay replay : BridgeBuilders.getInstance().getReplayManager().getReplays()) {
+            replay.getNpc().removeShows(event.getPlayer());
+        }
     }
 
     @EventHandler
