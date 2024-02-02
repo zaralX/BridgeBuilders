@@ -1,13 +1,16 @@
 package ru.zaralx.bridgebuilders.listeners;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
 import ru.zaralx.bridgebuilders.commons.npc.ReplayInRecording;
+import ru.zaralx.bridgebuilders.commons.npc.record.BlockDestroyRecord;
 import ru.zaralx.bridgebuilders.commons.npc.record.BlockPlaceRecord;
 
 public class PlayerListener implements Listener {
@@ -28,6 +31,19 @@ public class PlayerListener implements Listener {
             if (replay.isRecording())
                 replay.updateLastTickRecord(replay.getLastTickRecord().setBlockPlaceRecord(
                         new BlockPlaceRecord(block.getLocation(), block.getBlockData(), e.getHand())
+                ));
+        }
+    }
+
+    @EventHandler
+    public void onBreak(BlockBreakEvent e) {
+        Player player = e.getPlayer();
+        Location location = e.getBlock().getLocation();
+
+        for (ReplayInRecording replay : BridgeBuilders.getInstance().getReplayManager().getRecordingReplays(player)) {
+            if (replay.isRecording())
+                replay.updateLastTickRecord(replay.getLastTickRecord().setBlockDestroyRecord(
+                        new BlockDestroyRecord(location)
                 ));
         }
     }

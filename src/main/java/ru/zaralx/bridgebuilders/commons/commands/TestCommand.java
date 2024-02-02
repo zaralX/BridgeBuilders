@@ -53,6 +53,11 @@ public class TestCommand implements CommandExecutor, TabCompleter {
 
                             replay.pause();
                             sender.sendMessage("§aPaused");
+                        } else if (args[1].equals("restart")) {
+                            Replay replay = replayManager.getReplay(args[2]);
+
+                            replay.restart();
+                            sender.sendMessage("§aRestarted");
                         } else if (args[1].equals("load")) {
                             sender.sendMessage("§eLoading..");
                             Replay replay = BridgeBuilders.getInstance().getRecordsDatabase().loadReplay((Player) sender, args[2]);
@@ -83,6 +88,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
             arguments.add("play");
             arguments.add("pause");
             arguments.add("load");
+            arguments.add("restart");
         } else if (args.length == 3) {
             arguments.add("<NAME>");
         } else if (args.length == 4) {

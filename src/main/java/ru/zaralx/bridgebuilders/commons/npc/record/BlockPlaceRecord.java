@@ -39,7 +39,6 @@ public class BlockPlaceRecord extends BaseRecord {
         }
         location.getBlock().setBlockData(blockData);
         location.getWorld().playSound(location, blockData.getSoundGroup().getPlaceSound(), 1F, 0.8F);
-        location.getWorld().spawnParticle(Particle.ITEM_CRACK, location.clone().add(0.5,0.5,0.5), 10, 0.2, 0.25, 0.25, 0.05, new ItemStack(blockData.getMaterial()));
     }
 
     public Location getLocation() {

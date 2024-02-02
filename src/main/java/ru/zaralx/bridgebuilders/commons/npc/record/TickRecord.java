@@ -13,6 +13,7 @@ public class TickRecord {
     private final EquipmentRecord equipmentRecord;
     private final PoseRecord poseRecord;
     private BlockPlaceRecord blockPlaceRecord;
+    private BlockDestroyRecord blockDestroyRecord;
 
     public TickRecord(PositionRecord positionRecord, EquipmentRecord equipmentRecord, PoseRecord poseRecord) {
         this.positionRecord = positionRecord;
@@ -20,11 +21,12 @@ public class TickRecord {
         this.poseRecord = poseRecord;
     }
 
-    public TickRecord(PositionRecord positionRecord, EquipmentRecord equipmentRecord, PoseRecord poseRecord, BlockPlaceRecord blockPlaceRecord) {
+    public TickRecord(PositionRecord positionRecord, EquipmentRecord equipmentRecord, PoseRecord poseRecord, BlockPlaceRecord blockPlaceRecord, BlockDestroyRecord blockDestroyRecord) {
         this.positionRecord = positionRecord;
         this.equipmentRecord = equipmentRecord;
         this.poseRecord = poseRecord;
         this.blockPlaceRecord = blockPlaceRecord;
+        this.blockDestroyRecord = blockDestroyRecord;
     }
 
     public void animate(BaseNPC npc) {
@@ -33,6 +35,8 @@ public class TickRecord {
         poseRecord.execute(npc);
         if (blockPlaceRecord != null)
             blockPlaceRecord.execute(npc);
+        if (blockDestroyRecord != null)
+            blockDestroyRecord.execute(npc);
     }
 
     public PositionRecord getPositionRecord() {
@@ -51,8 +55,17 @@ public class TickRecord {
         return blockPlaceRecord;
     }
 
+    public BlockDestroyRecord getBlockDestroyRecord() {
+        return blockDestroyRecord;
+    }
+
     public TickRecord setBlockPlaceRecord(BlockPlaceRecord blockPlaceRecord) {
         this.blockPlaceRecord = blockPlaceRecord;
+        return this;
+    }
+
+    public TickRecord setBlockDestroyRecord(BlockDestroyRecord blockDestroyRecord) {
+        this.blockDestroyRecord = blockDestroyRecord;
         return this;
     }
 
@@ -61,6 +74,9 @@ public class TickRecord {
         return "TickRecord{" +
                 "positionRecord=" + positionRecord +
                 ", equipmentRecord=" + equipmentRecord +
+                ", poseRecord=" + poseRecord +
+                ", blockPlaceRecord=" + blockPlaceRecord +
+                ", blockDestroyRecord=" + blockDestroyRecord +
                 '}';
     }
 }

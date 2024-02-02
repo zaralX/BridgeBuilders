@@ -18,6 +18,8 @@ public final class BridgeBuilders extends JavaPlugin {
         instance = this;
         replayManager = new ReplayManager();
 
+        if (!getDataFolder().exists()) getDataFolder().mkdir();
+
         recordsDatabase = new RecordsDatabase();
         recordsDatabase.connect();
 
