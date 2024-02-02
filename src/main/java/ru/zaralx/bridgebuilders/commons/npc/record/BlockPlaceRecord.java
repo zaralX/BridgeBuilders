@@ -1,12 +1,12 @@
 package ru.zaralx.bridgebuilders.commons.npc.record;
 
-import net.minecraft.network.protocol.game.ClientboundMoveEntityPacket;
-import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Particle;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Door;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import ru.zaralx.bridgebuilders.commons.npc.BaseNPC;
 
 public class BlockPlaceRecord extends BaseRecord {
@@ -37,7 +37,16 @@ public class BlockPlaceRecord extends BaseRecord {
         } else if (hand == 1) {
             npc.swingRightArm();
         }
-        location.getBlock().setBlockData(blockData);
+        Block block = location.getBlock();
+        block.setBlockData(blockData);
+
+        if (blockData instanceof Door doorData) {
+            Block topBlock = block.getRelative(0, 1, 0);
+            BlockData topBlockData = Bukkit.createBlockData(block.getType());
+            ((Door) topBlockData).setHalf(Bisected.Half.TOP);
+            ((Door) topBlockData).setHinge(doorData.getHinge());
+            topBlock.setBlockData(topBlockData);
+        }
         location.getWorld().playSound(location, blockData.getSoundGroup().getPlaceSound(), 1F, 0.8F);
     }
 
