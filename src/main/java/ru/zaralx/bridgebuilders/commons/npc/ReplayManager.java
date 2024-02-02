@@ -1,7 +1,11 @@
 package ru.zaralx.bridgebuilders.commons.npc;
 
+import org.bukkit.entity.Player;
+import ru.zaralx.bridgebuilders.commons.npc.record.TickRecord;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ReplayManager {
     private List<Replay> replays = new ArrayList<>();
@@ -34,5 +38,11 @@ public class ReplayManager {
                 .filter(replay -> replay.getName().equals(name))
                 .findFirst()
                 .orElse(null);
+    }
+
+    public List<ReplayInRecording> getRecordingReplays(Player player) {
+        return recordingReplays.stream()
+                .filter(replay -> replay.getPlayer().equals(player))
+                .collect(Collectors.toList());
     }
 }

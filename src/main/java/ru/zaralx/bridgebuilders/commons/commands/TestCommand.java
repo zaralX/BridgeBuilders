@@ -1,5 +1,6 @@
 package ru.zaralx.bridgebuilders.commons.commands;
 
+import org.bukkit.block.data.Directional;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -18,6 +19,10 @@ public class TestCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof Player player) {
+            if (args[0].equals("some_test")) {
+                player.sendMessage(player.getLocation().clone().add(0, -1, 0).getBlock().getBlockData().toString());
+                player.sendMessage(((Directional) player.getLocation().clone().add(0, -1, 0).getBlock().getBlockData()).getFacing().toString());
+            }
                 if (args.length >= 3) {
                     if (args[0].equals("record"))
                         if (args[1].equals("start")) {
@@ -30,7 +35,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                         } else if (args[1].equals("stop")) {
                             replayManager.getRecordingReplay(args[2]).stop();
                             sender.sendMessage("§aStopped");
-                        } else if (args[1].equals("save")) {
+                        } else if (args[1].equals("save") && args.length >= 4) {
                             ReplayInRecording recordingReplay = replayManager.getRecordingReplay(args[2]);
 
                             if (BridgeBuilders.getInstance().getRecordsDatabase().saveNewReplay((Player) sender, args[3], recordingReplay.getRecords())) {
@@ -70,6 +75,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             arguments.add("record");
+            arguments.add("some_test");
         } else if (args.length == 2) {
             arguments.add("start");
             arguments.add("stop");

@@ -3,16 +3,14 @@ package ru.zaralx.bridgebuilders.commons.npc.database;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.world.entity.Pose;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
 import ru.zaralx.bridgebuilders.commons.npc.CustomEquipment;
 import ru.zaralx.bridgebuilders.commons.npc.Replay;
 import ru.zaralx.bridgebuilders.commons.npc.database.models.*;
-import ru.zaralx.bridgebuilders.commons.npc.record.EquipmentRecord;
-import ru.zaralx.bridgebuilders.commons.npc.record.PoseRecord;
-import ru.zaralx.bridgebuilders.commons.npc.record.PositionRecord;
-import ru.zaralx.bridgebuilders.commons.npc.record.TickRecord;
+import ru.zaralx.bridgebuilders.commons.npc.record.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +27,7 @@ public class RecordsDatabase {
     private final PositionModel positionModel = new PositionModel();
     private final EquipmentModel equipmentModel = new EquipmentModel();
     private final PoseModel poseModel = new PoseModel();
+    private final BlockPlaceModel blockPlaceModel = new BlockPlaceModel();
     public final Logger logger = BridgeBuilders.getInstance().getLogger();
 
     public Connection getConnection(){
@@ -91,12 +90,14 @@ public class RecordsDatabase {
                 PositionRecord positionRecord = null;
                 EquipmentRecord equipmentRecord = null;
                 PoseRecord poseRecord = null;
+                BlockPlaceRecord blockPlaceRecord = null;
 
                 player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("§d"+id+"/"+replayRow.getInt("totalTicks")));
 
                 ResultSet positionRow = execute("SELECT * FROM Replay_Tick_Position WHERE id = "+replayTicks.getInt("position"));
                 ResultSet equipmentRow = execute("SELECT * FROM Replay_Tick_Equipment WHERE id = "+replayTicks.getInt("equipment"));
                 ResultSet poseRow = execute("SELECT * FROM Replay_Tick_Pose WHERE id = "+replayTicks.getInt("pose"));
+                ResultSet placeBlockRow = execute("SELECT * FROM Replay_Tick_Block_Place WHERE id = "+replayTicks.getInt("place_block"));
 
                 if (positionRow != null) {
                     positionRecord = new PositionRecord(new Location(player.getWorld(), positionRow.getDouble("x"), positionRow.getDouble("y"), positionRow.getDouble("z"), positionRow.getFloat("yaw"), positionRow.getFloat("pitch")));
@@ -114,11 +115,18 @@ public class RecordsDatabase {
                 if (poseRow != null) {
                     poseRecord = new PoseRecord(Pose.valueOf(poseRow.getString("pose")));
                 }
+                if (placeBlockRow != null) {
+                    blockPlaceRecord = new BlockPlaceRecord(
+                            new Location(player.getWorld(), placeBlockRow.getDouble("x"), placeBlockRow.getDouble("y"), placeBlockRow.getDouble("z")),
+                            Bukkit.createBlockData(placeBlockRow.getString("block_data")),
+                            placeBlockRow.getInt("hand"));
+                }
 
                 records.add(new TickRecord(
                         positionRecord,
                         equipmentRecord,
-                        poseRecord
+                        poseRecord,
+                        blockPlaceRecord
                 ));
             }
 
@@ -162,32 +170,49 @@ public class RecordsDatabase {
         Location positionRecordLocation = positionRecord.getLocation();
         EquipmentRecord equipmentRecord = tickRecord.getEquipmentRecord();
         PoseRecord poseRecord = tickRecord.getPoseRecord();
+        BlockPlaceRecord blockPlaceRecord = tickRecord.getBlockPlaceRecord();
+        Location blockPlaceLocation = null;
+        if (blockPlaceRecord != null)
+            blockPlaceLocation = blockPlaceRecord.getLocation();
+
         int positionId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Position(id, replay, x, y, z, yaw, pitch) VALUES (null, "
-                +replayId+", "
-                +positionRecordLocation.getX()+", "
-                +positionRecordLocation.getY()+", "
-                +positionRecordLocation.getZ()+", "
-                +positionRecordLocation.getYaw()+", "
-                +positionRecordLocation.getPitch()+
+                + replayId + ", "
+                + positionRecordLocation.getX() + ", "
+                + positionRecordLocation.getY() + ", "
+                + positionRecordLocation.getZ() + ", "
+                + positionRecordLocation.getYaw() + ", "
+                + positionRecordLocation.getPitch() +
                 ");");
         int equipmentId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Equipment(id, replay, HAND_material, OFF_HAND_material, HELMET_material, CHESTPLATE_material, LEGGINGS_material, BOOTS_material) VALUES (null, "
-                +replayId+", "
-                +"'"+equipmentRecord.getHand().getType()+"', "
-                +"'"+equipmentRecord.getOffHand().getType()+"', "
-                +"'"+equipmentRecord.getHelmet().getType()+"', "
-                +"'"+equipmentRecord.getChestplate().getType()+"', "
-                +"'"+equipmentRecord.getLeggings().getType()+"', "
-                +"'"+equipmentRecord.getBoots().getType()+
+                + replayId + ", "
+                + "'" + equipmentRecord.getHand().getType() + "', "
+                + "'" + equipmentRecord.getOffHand().getType() + "', "
+                + "'" + equipmentRecord.getHelmet().getType() + "', "
+                + "'" + equipmentRecord.getChestplate().getType() + "', "
+                + "'" + equipmentRecord.getLeggings().getType() + "', "
+                + "'" + equipmentRecord.getBoots().getType() +
                 "');");
         int poseId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Pose(id, replay, pose) VALUES (null, "
-                +replayId+", '"
-                +poseRecord.getPose().toString()+
+                + replayId + ", '"
+                + poseRecord.getPose().toString() +
                 "');");
-        executeUpdate("INSERT INTO Replay_Tick(id, replay, position, equipment, pose) VALUES (null, "
-                +replayId+", "+
-                positionId+", "+
-                equipmentId+", "+
-                poseId +
+        int placeBlockId = -1;
+        if (blockPlaceLocation != null) {
+            placeBlockId = executeUpdateWithGeneratedId("INSERT INTO Replay_Tick_Block_Place(id, replay, x, y, z, block_data, hand) VALUES (null, "
+                    + replayId + ", "
+                    + blockPlaceLocation.getX() + ", "
+                    + blockPlaceLocation.getY() + ", "
+                    + blockPlaceLocation.getZ() + ", "
+                    + "'" + blockPlaceRecord.getBlockData().getAsString() + "', " +
+                    blockPlaceRecord.getHand() +
+                    ");");
+        }
+        executeUpdate("INSERT INTO Replay_Tick(id, replay, position, equipment, pose, place_block) VALUES (null, "
+                + replayId + ", "
+                + positionId + ", "
+                + equipmentId + ", "
+                + poseId + ", "
+                + placeBlockId +
                 ");");
     }
 
@@ -197,6 +222,7 @@ public class RecordsDatabase {
         positionModel.init();
         equipmentModel.init();
         poseModel.init();
+        blockPlaceModel.init();
     }
 
     public ResultSet executeNoNext(String query) throws SQLException, ClassNotFoundException {

@@ -32,7 +32,10 @@ public class ReplayInRecording {
 
         task = Bukkit.getScheduler().runTaskTimer(BridgeBuilders.getInstance(), () -> {
             if (isRecording) {
-                records.add(new TickRecord(new PositionRecord(player.getLocation()), new EquipmentRecord(player.getEquipment()), new PoseRecord(player.getPose())));
+                records.add(new TickRecord(
+                        new PositionRecord(player.getLocation()),
+                        new EquipmentRecord(player.getEquipment()),
+                        new PoseRecord(player.getPose())));
                 totalTicks++;
             }
         }, 0, 1);
@@ -68,7 +71,7 @@ public class ReplayInRecording {
         return totalTicks;
     }
 
-    public Boolean getRecording() {
+    public Boolean isRecording() {
         return isRecording;
     }
 
@@ -78,6 +81,14 @@ public class ReplayInRecording {
 
     public Player getPlayer() {
         return player;
+    }
+
+    public TickRecord getLastTickRecord() {
+        return records.get(records.size()-1);
+    }
+
+    public void updateLastTickRecord(TickRecord tickRecord) {
+        records.set(records.size()-1, tickRecord);
     }
 
     @Override

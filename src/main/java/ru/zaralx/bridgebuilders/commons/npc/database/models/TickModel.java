@@ -8,5 +8,6 @@ public class TickModel extends BaseModel {
         columns.add(new ModelColumn("position", "BIGINT", true, false));
         columns.add(new ModelColumn("equipment", "BIGINT", true, false));
         columns.add(new ModelColumn("pose", "BIGINT", true, false));
+        columns.add(new ModelColumn("place_block", "BIGINT", true, false));
     }
 }

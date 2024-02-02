@@ -4,6 +4,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ru.zaralx.bridgebuilders.commons.commands.TestCommand;
 import ru.zaralx.bridgebuilders.commons.npc.ReplayManager;
 import ru.zaralx.bridgebuilders.commons.npc.database.RecordsDatabase;
+import ru.zaralx.bridgebuilders.listeners.PlayerListener;
 
 import java.sql.SQLException;
 
@@ -21,6 +22,8 @@ public final class BridgeBuilders extends JavaPlugin {
         recordsDatabase.connect();
 
         getCommand("test").setExecutor(new TestCommand());
+
+        new PlayerListener();
     }
 
     @Override
