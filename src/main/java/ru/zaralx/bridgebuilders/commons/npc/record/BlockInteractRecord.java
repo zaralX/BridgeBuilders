@@ -22,8 +22,8 @@ public class BlockInteractRecord extends BaseRecord {
     public void execute(BaseNPC npc) {
         super.execute(npc);
         npc.swingRightArm();
-        location.getBlock().setBlockData(blockData);
         location.getWorld().playSound(location, getSound(blockData), 1F, 0.8F);
+        location.getBlock().setBlockData(blockData);
     }
 
     private Sound getSound(BlockData blockData) {
