@@ -37,6 +37,14 @@ public class ReplayManager {
                 .orElse(null);
     }
 
+    public Replay getReplay(String name, ReplayReflect reflect) {
+        return replays.stream()
+                .filter(replay -> replay.getName().equals(name))
+                .filter(replay -> replay.getReplayReflect().equals(reflect))
+                .findFirst()
+                .orElse(null);
+    }
+
     public ReplayInRecording getRecordingReplay(String name) {
         return recordingReplays.stream()
                 .filter(replay -> replay.getName().equals(name))

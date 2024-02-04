@@ -38,9 +38,7 @@ public class Skin {
             if (properties != null && !properties.isEmpty()) {
                 JsonObject property = properties.get(0).getAsJsonObject();
                 String value = property.get("value").getAsString();
-                System.err.println(value);
                 String signature = property.get("signature").getAsString();
-                System.err.println(signature);
                 this.texture = value;
                 this.signature = signature;
             }

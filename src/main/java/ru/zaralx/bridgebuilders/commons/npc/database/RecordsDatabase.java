@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
 import ru.zaralx.bridgebuilders.commons.npc.CustomEquipment;
 import ru.zaralx.bridgebuilders.commons.npc.Replay;
+import ru.zaralx.bridgebuilders.commons.npc.ReplayReflect;
 import ru.zaralx.bridgebuilders.commons.npc.database.models.*;
 import ru.zaralx.bridgebuilders.commons.npc.record.*;
 
@@ -71,6 +72,10 @@ public class RecordsDatabase {
     }
 
     public Replay loadReplay(Player player, String name) {
+        return loadReplay(player, name, ReplayReflect.ROTATE_0, player.getLocation());
+    }
+
+    public Replay loadReplay(Player player, String name, ReplayReflect replayReflect, Location reflectCenter) {
         try {
             ResultSet replayRow = execute("SELECT * FROM Replays WHERE name = '"+name+"'");
             if (replayRow == null) {
@@ -79,8 +84,17 @@ public class RecordsDatabase {
             }
 
             if (BridgeBuilders.getInstance().getReplayManager().getReplay(name) != null) {
-                logger.severe("Failed to load replay '" + name + "' - Already loaded");
-                return null;
+                if (BridgeBuilders.getInstance().getReplayManager().getReplay(name).getReplayReflect() == replayReflect) {
+                    logger.severe("Failed to load replay '" + name + "' - Already loaded");
+                    return null;
+                } else {
+                    if (BridgeBuilders.getInstance().getReplayManager().getReplay(name).getReplayReflect() == ReplayReflect.ROTATE_0 && replayReflect != ReplayReflect.ROTATE_0) {
+                        Replay replay = BridgeBuilders.getInstance().getReplayManager().getReplay(name, ReplayReflect.ROTATE_0).reflect(reflectCenter, replayReflect);
+                        BridgeBuilders.getInstance().getReplayManager().getReplays().add(replay);
+                        logger.info("Loaded "+replay.getName()+" | Reflect: "+replay.getReplayReflect().name());
+                        return replay;
+                    }
+                }
             }
 
             List<TickRecord> records = new ArrayList<>();
@@ -108,7 +122,7 @@ public class RecordsDatabase {
                 ResultSet interactBlockRow = execute("SELECT * FROM Replay_Tick_Block_Interact WHERE id = "+replayTicks.getInt("interact_block"));
 
                 if (positionRow != null) {
-                    positionRecord = new PositionRecord(new Location(player.getWorld(), positionRow.getDouble("x"), positionRow.getDouble("y"), positionRow.getDouble("z"), positionRow.getFloat("yaw"), positionRow.getFloat("pitch")));
+                    positionRecord = new PositionRecord(replayReflect.reflect(reflectCenter, new Location(player.getWorld(), positionRow.getDouble("x"), positionRow.getDouble("y"), positionRow.getDouble("z"), positionRow.getFloat("yaw"), positionRow.getFloat("pitch"))));
                 }
                 if (equipmentRow != null) {
                     equipmentRecord = new EquipmentRecord(new CustomEquipment(
@@ -125,24 +139,24 @@ public class RecordsDatabase {
                 }
                 if (placeBlockRow != null) {
                     blockPlaceRecord = new BlockPlaceRecord(
-                            new Location(player.getWorld(), placeBlockRow.getDouble("x"), placeBlockRow.getDouble("y"), placeBlockRow.getDouble("z")),
+                            replayReflect.reflect(reflectCenter, new Location(player.getWorld(), placeBlockRow.getDouble("x"), placeBlockRow.getDouble("y"), placeBlockRow.getDouble("z"))),
                             Bukkit.createBlockData(placeBlockRow.getString("block_data")),
                             placeBlockRow.getInt("hand"));
                 }
                 if (destroyBlockRow != null) {
-                    blockDestroyRecord = new BlockDestroyRecord(new Location(player.getWorld(),
+                    blockDestroyRecord = new BlockDestroyRecord(replayReflect.reflect(reflectCenter, new Location(player.getWorld(),
                             destroyBlockRow.getDouble("x"),
                             destroyBlockRow.getDouble("y"),
                             destroyBlockRow.getDouble("z")
-                    ));
+                    )));
                 }
                 if (interactBlockRow != null) {
                     blockInteractRecord = new BlockInteractRecord(
-                         new Location(player.getWorld(),
+                            replayReflect.reflect(reflectCenter, new Location(player.getWorld(),
                             interactBlockRow.getDouble("x"),
                             interactBlockRow.getDouble("y"),
                             interactBlockRow.getDouble("z")
-                        ),
+                        )),
                         Bukkit.createBlockData(interactBlockRow.getString("new_block_data"))
                     );
                 }
@@ -156,8 +170,11 @@ public class RecordsDatabase {
                         blockInteractRecord
                 ));
             }
+            Replay replay = new Replay(replayRow.getString("name"), records, false, replayReflect);
 
-            return new Replay(replayRow.getString("name"), records, false);
+            BridgeBuilders.getInstance().getReplayManager().getReplays().add(replay);
+            logger.info("Loaded "+replay.getName()+" | Reflect: "+replay.getReplayReflect().name());
+            return replay;
         } catch (SQLException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -285,12 +302,14 @@ public class RecordsDatabase {
 
     public ResultSet executeNoNext(String query) throws SQLException, ClassNotFoundException {
         Statement statement = _connection.createStatement();
+        statement.setQueryTimeout(5);
         return statement.executeQuery(query);
     }
 
     public ResultSet execute(String query) throws SQLException, ClassNotFoundException {
         if(!isConnected() || !_connection.isValid(10)) connect();
         Statement statement = _connection.createStatement();
+        statement.setQueryTimeout(5);
         ResultSet result = statement.executeQuery(query);
         if(result.next()) return result;
         else return null;
@@ -299,6 +318,7 @@ public class RecordsDatabase {
     public void executeUpdate(String query) throws SQLException, ClassNotFoundException {
         if(!isConnected() || !_connection.isValid(10)) connect();
         Statement statement = _connection.createStatement();
+        statement.setQueryTimeout(5);
         statement.executeUpdate(query);
         statement.close();
     }
@@ -306,6 +326,7 @@ public class RecordsDatabase {
     public int executeUpdateWithGeneratedId(String query) throws SQLException, ClassNotFoundException {
         if (!isConnected() || !_connection.isValid(10)) connect();
         Statement statement = _connection.createStatement();
+        statement.setQueryTimeout(5);
         statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
 
         ResultSet generatedKeys = statement.getGeneratedKeys();

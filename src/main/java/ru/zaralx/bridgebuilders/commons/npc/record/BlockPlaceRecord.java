@@ -6,7 +6,9 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Door;
+import org.bukkit.block.data.type.Fence;
 import org.bukkit.inventory.EquipmentSlot;
+import ru.zaralx.bridgebuilders.BridgeBuilders;
 import ru.zaralx.bridgebuilders.commons.npc.BaseNPC;
 
 public class BlockPlaceRecord extends BaseRecord {
@@ -37,8 +39,14 @@ public class BlockPlaceRecord extends BaseRecord {
         } else if (hand == 1) {
             npc.swingRightArm();
         }
+
+        // TODO fix fence connections
         Block block = location.getBlock();
-        block.setBlockData(blockData);
+        if (blockData instanceof Fence) {
+            block.setType(blockData.getMaterial());
+        } else {
+            block.setBlockData(blockData);
+        }
 
         if (blockData instanceof Door doorData) {
             Block topBlock = block.getRelative(0, 1, 0);
@@ -47,6 +55,7 @@ public class BlockPlaceRecord extends BaseRecord {
             ((Door) topBlockData).setHinge(doorData.getHinge());
             topBlock.setBlockData(topBlockData);
         }
+
         location.getWorld().playSound(location, blockData.getSoundGroup().getPlaceSound(), 1F, 0.8F);
     }
 

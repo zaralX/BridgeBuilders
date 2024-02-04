@@ -10,6 +10,7 @@ import ru.zaralx.bridgebuilders.BridgeBuilders;
 import ru.zaralx.bridgebuilders.commons.npc.Replay;
 import ru.zaralx.bridgebuilders.commons.npc.ReplayInRecording;
 import ru.zaralx.bridgebuilders.commons.npc.ReplayManager;
+import ru.zaralx.bridgebuilders.commons.npc.ReplayReflect;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +46,18 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                         } else if (args[1].equals("play")) {
                             Replay replay = replayManager.getReplay(args[2]);
 
-                            replay.getNpc().initForAllOnline(true);
+                            replay.getNpc().initForAllOnline(false);
                             replay.start();
+                            sender.sendMessage("§aResumed");
+                        } else if (args[1].equals("play_reflected")) {
+                            for (ReplayReflect reflect : ReplayReflect.values()) {
+                                Replay replay = replayManager.getReplay(args[2], reflect);
+                                if (replay != null) {
+                                    replay.getNpc().initForAllOnline(false);
+                                    replay.start();
+                                }
+                            }
+
                             sender.sendMessage("§aResumed");
                         } else if (args[1].equals("pause")) {
                             Replay replay = replayManager.getReplay(args[2]);
@@ -61,13 +72,15 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                         } else if (args[1].equals("load")) {
                             sender.sendMessage("§eLoading..");
                             Replay replay = BridgeBuilders.getInstance().getRecordsDatabase().loadReplay((Player) sender, args[2]);
-                            if (replay == null) {
-                                sender.sendMessage("§cFailed to load");
-                                return true;
-                            }
-                            replayManager.addReplay(replay);
-                            replay.getNpc().initForAllOnline(false);
+                            replay.getNpc().initForAllOnline(true);
                             sender.sendMessage("§aLoaded");
+                        } else if (args[1].equals("load_reflected")) {
+                            sender.sendMessage("§eLoading..");
+                            for (ReplayReflect reflect : ReplayReflect.values()) {
+                                Replay replay = BridgeBuilders.getInstance().getRecordsDatabase().loadReplay((Player) sender, args[2], reflect, player.getLocation());
+                                replay.getNpc().initForAllOnline(true);
+                                sender.sendMessage("§aLoaded");
+                            }
                         }
             } else sender.sendMessage("§cNeed arguments");
         }
@@ -87,8 +100,10 @@ public class TestCommand implements CommandExecutor, TabCompleter {
             arguments.add("stop");
             arguments.add("save");
             arguments.add("play");
+            arguments.add("play_reflected");
             arguments.add("pause");
             arguments.add("load");
+            arguments.add("load_reflected");
             arguments.add("restart");
         } else if (args.length == 3) {
             arguments.add("<NAME>");
