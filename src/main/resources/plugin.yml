@@ -13,3 +13,9 @@ commands:
     aliases: [t, te, tes]
     permission: op
     permission-message: You do not have permission
+  game:
+    description: "GAME COMMAND"
+    usage: /game
+    aliases: [ g ]
+    permission: op
+    permission-message: You do not have permission

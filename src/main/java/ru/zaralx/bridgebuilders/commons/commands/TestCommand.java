@@ -53,7 +53,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                             for (ReplayReflect reflect : ReplayReflect.values()) {
                                 Replay replay = replayManager.getReplay(args[2], reflect);
                                 if (replay != null) {
-                                    replay.getNpc().initForAllOnline(false);
+                                    replay.getNpc().initForAllOnline(true);
                                     replay.start();
                                 }
                             }
@@ -77,7 +77,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                         } else if (args[1].equals("load_reflected")) {
                             sender.sendMessage("§eLoading..");
                             for (ReplayReflect reflect : ReplayReflect.values()) {
-                                Replay replay = BridgeBuilders.getInstance().getRecordsDatabase().loadReplay((Player) sender, args[2], reflect, player.getLocation());
+                                Replay replay = BridgeBuilders.getInstance().getRecordsDatabase().loadReplay(((Player) sender).getWorld(), args[2], reflect, player.getLocation());
                                 replay.getNpc().initForAllOnline(true);
                                 sender.sendMessage("§aLoaded");
                             }

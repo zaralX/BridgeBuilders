@@ -5,6 +5,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.world.entity.Pose;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
 import ru.zaralx.bridgebuilders.commons.npc.CustomEquipment;
@@ -72,11 +73,12 @@ public class RecordsDatabase {
     }
 
     public Replay loadReplay(Player player, String name) {
-        return loadReplay(player, name, ReplayReflect.ROTATE_0, player.getLocation());
+        return loadReplay(player.getWorld(), name, ReplayReflect.ROTATE_0, player.getLocation());
     }
 
-    public Replay loadReplay(Player player, String name, ReplayReflect replayReflect, Location reflectCenter) {
+    public Replay loadReplay(World world, String name, ReplayReflect replayReflect, Location reflectCenter) {
         try {
+            logger.info("Loading replay "+name+" | Reflect: "+replayReflect.name());
             ResultSet replayRow = execute("SELECT * FROM Replays WHERE name = '"+name+"'");
             if (replayRow == null) {
                 logger.severe("Failed to load replay '" + name + "' - Not found");
@@ -112,8 +114,6 @@ public class RecordsDatabase {
                 BlockDestroyRecord blockDestroyRecord = null;
                 BlockInteractRecord blockInteractRecord = null;
 
-                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("§d"+id+"/"+replayRow.getInt("totalTicks")));
-
                 ResultSet positionRow = execute("SELECT * FROM Replay_Tick_Position WHERE id = "+replayTicks.getInt("position"));
                 ResultSet equipmentRow = execute("SELECT * FROM Replay_Tick_Equipment WHERE id = "+replayTicks.getInt("equipment"));
                 ResultSet poseRow = execute("SELECT * FROM Replay_Tick_Pose WHERE id = "+replayTicks.getInt("pose"));
@@ -122,7 +122,7 @@ public class RecordsDatabase {
                 ResultSet interactBlockRow = execute("SELECT * FROM Replay_Tick_Block_Interact WHERE id = "+replayTicks.getInt("interact_block"));
 
                 if (positionRow != null) {
-                    positionRecord = new PositionRecord(replayReflect.reflect(reflectCenter, new Location(player.getWorld(), positionRow.getDouble("x"), positionRow.getDouble("y"), positionRow.getDouble("z"), positionRow.getFloat("yaw"), positionRow.getFloat("pitch"))));
+                    positionRecord = new PositionRecord(replayReflect.reflect(reflectCenter, new Location(world, positionRow.getDouble("x"), positionRow.getDouble("y"), positionRow.getDouble("z"), positionRow.getFloat("yaw"), positionRow.getFloat("pitch"))));
                 }
                 if (equipmentRow != null) {
                     equipmentRecord = new EquipmentRecord(new CustomEquipment(
@@ -139,12 +139,12 @@ public class RecordsDatabase {
                 }
                 if (placeBlockRow != null) {
                     blockPlaceRecord = new BlockPlaceRecord(
-                            replayReflect.reflect(reflectCenter, new Location(player.getWorld(), placeBlockRow.getDouble("x"), placeBlockRow.getDouble("y"), placeBlockRow.getDouble("z"))),
+                            replayReflect.reflect(reflectCenter, new Location(world, placeBlockRow.getDouble("x"), placeBlockRow.getDouble("y"), placeBlockRow.getDouble("z"))),
                             Bukkit.createBlockData(placeBlockRow.getString("block_data")),
                             placeBlockRow.getInt("hand"));
                 }
                 if (destroyBlockRow != null) {
-                    blockDestroyRecord = new BlockDestroyRecord(replayReflect.reflect(reflectCenter, new Location(player.getWorld(),
+                    blockDestroyRecord = new BlockDestroyRecord(replayReflect.reflect(reflectCenter, new Location(world,
                             destroyBlockRow.getDouble("x"),
                             destroyBlockRow.getDouble("y"),
                             destroyBlockRow.getDouble("z")
@@ -152,7 +152,7 @@ public class RecordsDatabase {
                 }
                 if (interactBlockRow != null) {
                     blockInteractRecord = new BlockInteractRecord(
-                            replayReflect.reflect(reflectCenter, new Location(player.getWorld(),
+                            replayReflect.reflect(reflectCenter, new Location(world,
                             interactBlockRow.getDouble("x"),
                             interactBlockRow.getDouble("y"),
                             interactBlockRow.getDouble("z")

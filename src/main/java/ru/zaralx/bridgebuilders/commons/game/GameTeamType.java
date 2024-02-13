@@ -6,7 +6,7 @@ public enum GameTeamType {
     RED("Red", ChatColor.of("#ff0000")),
     GREEN("Green", ChatColor.of("#00ff00")),
     BLUE("Blue", ChatColor.of("#0000ff")),
-    YELLOW("Yellow", ChatColor.of("#ffff00")),;
+    YELLOW("Yellow", ChatColor.of("#ffff00"));
     private final String name;
     private final ChatColor color;
 

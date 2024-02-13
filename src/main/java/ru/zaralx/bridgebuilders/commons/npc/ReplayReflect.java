@@ -160,4 +160,13 @@ public enum ReplayReflect {
         }
         return axis;
     }
+
+    public static ReplayReflect fromDegrees(String degrees) {
+        return switch (degrees) {
+            case "90" -> ReplayReflect.ROTATE_90;
+            case "180" -> ReplayReflect.ROTATE_180;
+            case "270" -> ReplayReflect.ROTATE_270;
+            default -> ReplayReflect.ROTATE_0;
+        };
+    }
 }
