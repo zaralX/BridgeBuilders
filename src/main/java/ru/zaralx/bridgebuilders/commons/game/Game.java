@@ -57,14 +57,14 @@ public class Game {
             if (i == 0) {
                 for (TickRecord record : replay.getRecords()) {
                     if (record.getBlockPlaceRecord() != null) {
-                        buildItems.add(new BuildItems.BuildItem(record.getBlockPlaceRecord().getBlockData().getMaterial(), 1));
+                        buildItems.add(new BuildItems.BuildItem(record.getBlockPlaceRecord().getBlockData().getMaterial(), 1), record.getBlockPlaceRecord().getLocation());
                     } 
                     if (record.getBlockDestroyRecord() != null) {
                         // TODO: OPTIMIZE DESTROY
                         for (TickRecord record2 : replay.getRecords()) {
                             if (record2.getBlockPlaceRecord() != null) {
                                 if (record.getBlockDestroyRecord().getLocation().equals(record2.getBlockPlaceRecord().getLocation())) {
-                                    buildItems.remove(new BuildItems.BuildItem(record2.getBlockPlaceRecord().getBlockData().getMaterial(), 1));
+                                    buildItems.remove(new BuildItems.BuildItem(record2.getBlockPlaceRecord().getBlockData().getMaterial(), 1), record2.getBlockPlaceRecord().getLocation());
                                 }
                             }
                         }
@@ -72,7 +72,7 @@ public class Game {
                 }
             }
 
-            GameTeam gameTeam = new GameTeam(location, gameTeamType, replay);
+            GameTeam gameTeam = new GameTeam(this, location, gameTeamType, replay);
             teams.add(gameTeam);
             i++;
         }
@@ -111,6 +111,7 @@ public class Game {
             for (Player player : team.getPlayers()) {
                 player.teleport(team.getRespawnLocation());
             }
+            team.initTask();
             team.getReplay().start();
         }
         return true;

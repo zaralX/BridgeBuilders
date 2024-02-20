@@ -4,23 +4,31 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
 public class BuildItems {
     private final List<BuildItem> buildItems = new ArrayList<>();
-
-    public void add(BuildItem buildItem) {
+    private final HashMap<Location, Material> endLocations = new HashMap<>();
+    public void add(BuildItem buildItem, Location location) {
         for (BuildItem item : buildItems) {
             if (item.equals(buildItem)) {
+                if (endLocations.get(location) != null) {
+                    if (!endLocations.get(location).equals(buildItem.material)) {
+                        endLocations.remove(location);
+                        endLocations.put(location, buildItem.material);
+                    }
+                }
                 item.add(buildItem);
                 return;
             }
         }
         buildItems.add(buildItem);
+        endLocations.put(location, buildItem.material);
     }
 
-    public void remove(BuildItem buildItem) {
+    public void remove(BuildItem buildItem, Location location) {
         Iterator<BuildItem> iterator = buildItems.iterator();
         while (iterator.hasNext()) {
             BuildItem item = iterator.next();
@@ -29,6 +37,7 @@ public class BuildItems {
                 if (item.count <= 0) {
                     iterator.remove();
                 }
+                endLocations.remove(location);
                 return;
             }
         }
@@ -66,5 +75,9 @@ public class BuildItems {
 
     public List<BuildItem> getItems() {
         return buildItems;
+    }
+
+    public HashMap<Location, Material> getEndLocations() {
+        return endLocations;
     }
 }
