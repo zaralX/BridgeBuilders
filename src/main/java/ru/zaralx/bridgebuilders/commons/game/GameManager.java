@@ -33,14 +33,6 @@ public class GameManager {
         }
     }
 
-    public boolean join(Player player, Game game) {
-        return game.join(player);
-    }
-
-    public boolean leave(Player player, Game game) {
-        return game.leave(player);
-    }
-
     public boolean join(Player player, String gameId) {
         for (Game game : games) {
             if (game.getPlayers().contains(player)) {
@@ -49,7 +41,7 @@ public class GameManager {
         }
         for (Game game : games) {
             if (game.getId().equals(gameId) || game.getName().equals(gameId)) {
-                return join(player, game);
+                return game.join(player);
             }
         }
         return false;
@@ -58,7 +50,7 @@ public class GameManager {
     public boolean leave(Player player, String gameId) {
         for (Game game : games) {
             if ((game.getId().equals(gameId) || game.getName().equals(gameId)) && game.getPlayers().contains(player)) {
-                return leave(player, game);
+                return game.leave(player);
             }
         }
         return false;
@@ -67,7 +59,16 @@ public class GameManager {
     public boolean leave(Player player) {
         for (Game game : games) {
             if (game.getPlayers().contains(player)) {
-                return leave(player, game);
+                return game.leave(player);
+            }
+        }
+        return false;
+    }
+
+    public boolean start(String gameId) {
+        for (Game game : games) {
+            if (game.getId().equals(gameId) || game.getName().equals(gameId)) {
+                return game.start();
             }
         }
         return false;

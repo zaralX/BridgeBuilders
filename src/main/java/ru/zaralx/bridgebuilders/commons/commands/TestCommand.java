@@ -1,5 +1,6 @@
 package ru.zaralx.bridgebuilders.commons.commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.block.data.Directional;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -47,6 +48,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                             Replay replay = replayManager.getReplay(args[2]);
 
                             replay.getNpc().initForAllOnline(false);
+                            replay.setTask(Bukkit.getScheduler().runTaskTimer(BridgeBuilders.getInstance(), replay::next, 0, 1));
                             replay.start();
                             sender.sendMessage("§aResumed");
                         } else if (args[1].equals("play_reflected")) {
@@ -54,6 +56,7 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                                 Replay replay = replayManager.getReplay(args[2], reflect);
                                 if (replay != null) {
                                     replay.getNpc().initForAllOnline(true);
+                                    replay.setTask(Bukkit.getScheduler().runTaskTimer(BridgeBuilders.getInstance(), replay::next, 0, 1));
                                     replay.start();
                                 }
                             }
@@ -73,12 +76,14 @@ public class TestCommand implements CommandExecutor, TabCompleter {
                             sender.sendMessage("§eLoading..");
                             Replay replay = BridgeBuilders.getInstance().getRecordsDatabase().loadReplay((Player) sender, args[2]);
                             replay.getNpc().initForAllOnline(true);
+                            replay.setTask(Bukkit.getScheduler().runTaskTimer(BridgeBuilders.getInstance(), replay::next, 0, 1));
                             sender.sendMessage("§aLoaded");
                         } else if (args[1].equals("load_reflected")) {
                             sender.sendMessage("§eLoading..");
                             for (ReplayReflect reflect : ReplayReflect.values()) {
                                 Replay replay = BridgeBuilders.getInstance().getRecordsDatabase().loadReplay(((Player) sender).getWorld(), args[2], reflect, player.getLocation());
                                 replay.getNpc().initForAllOnline(true);
+                                replay.setTask(Bukkit.getScheduler().runTaskTimer(BridgeBuilders.getInstance(), replay::next, 0, 1));
                                 sender.sendMessage("§aLoaded");
                             }
                         }

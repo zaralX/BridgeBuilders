@@ -6,6 +6,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
+import ru.zaralx.bridgebuilders.commons.game.BuildItems;
 import ru.zaralx.bridgebuilders.commons.game.Game;
 import ru.zaralx.bridgebuilders.commons.game.GameManager;
 
@@ -17,6 +18,7 @@ public class GameCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args[0].equalsIgnoreCase("list")) gameList(sender);
+        if (args[0].equalsIgnoreCase("item_list")) itemList(sender, args[1]);
 
         if (sender instanceof Player player) {
             if (args[0].equalsIgnoreCase("join")) {
@@ -34,9 +36,30 @@ public class GameCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage("Failed to leave");
                 }
             }
+
+            if (args[0].equalsIgnoreCase("start")) {
+                if (gameManager.start(args[1])) {
+                    player.sendMessage("Started");
+                } else {
+                    player.sendMessage("Failed to start");
+                }
+            }
         }
 
         return true;
+    }
+
+    private void itemList(CommandSender sender, String gameId) {
+        for (Game game : gameManager.getGames()) {
+            if (game.getId().equals(gameId) || game.getName().equals(gameId)) {
+                for (BuildItems.BuildItem item : game.getBuildItems().getItems()) {
+                    sender.sendMessage(
+                            "§f" + item.material.toString() + " §ex" + item.count
+                    );
+                }
+                break;
+            }
+        }
     }
 
     private void gameList(CommandSender sender) {
@@ -51,12 +74,17 @@ public class GameCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> arguments = new ArrayList<>();
 
-        if (args.length == 1) {
-            arguments.addAll(List.of("list", "join", "leave"));
-        } else if (args.length == 2 && args[0].equals("join")) {
-            for (Game game : gameManager.getGames()) {
-                arguments.add(game.getId());
-            }
+        switch (args.length) {
+            case 1:
+                arguments.addAll(List.of("list", "join", "leave", "start", "item_list"));
+                break;
+            case 2:
+                if (args[0].equals("join") || args[0].equals("start") || args[0].equals("item_list")) {
+                    for (Game game : gameManager.getGames()) {
+                        arguments.add(game.getId());
+                    }
+                }
+                break;
         }
 
         return arguments;

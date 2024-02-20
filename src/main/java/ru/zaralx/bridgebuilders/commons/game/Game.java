@@ -5,9 +5,11 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
 import ru.zaralx.bridgebuilders.commons.npc.Replay;
 import ru.zaralx.bridgebuilders.commons.npc.ReplayReflect;
+import ru.zaralx.bridgebuilders.commons.npc.record.TickRecord;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +21,7 @@ public class Game {
     private final Integer maxPlayers;
     private final Location mapCenter;
     private final List<GameTeam> teams = new ArrayList<>();
+    private final BuildItems buildItems = new BuildItems();
     private boolean runned = false;
 
     public Game(String id, FileConfiguration configuration) {
@@ -34,7 +37,7 @@ public class Game {
                 configuration.getInt("map_center.z")+0.5
         );
 
-
+        int i = 0;
         for (GameTeamType gameTeamType : GameTeamType.values()) {
             Location location = new Location(
                     world,
@@ -51,8 +54,27 @@ public class Game {
                     this.mapCenter
             );
 
+            if (i == 0) {
+                for (TickRecord record : replay.getRecords()) {
+                    if (record.getBlockPlaceRecord() != null) {
+                        buildItems.add(new BuildItems.BuildItem(record.getBlockPlaceRecord().getBlockData().getMaterial(), 1));
+                    } 
+                    if (record.getBlockDestroyRecord() != null) {
+                        // TODO: OPTIMIZE DESTROY
+                        for (TickRecord record2 : replay.getRecords()) {
+                            if (record2.getBlockPlaceRecord() != null) {
+                                if (record.getBlockDestroyRecord().getLocation().equals(record2.getBlockPlaceRecord().getLocation())) {
+                                    buildItems.remove(new BuildItems.BuildItem(record2.getBlockPlaceRecord().getBlockData().getMaterial(), 1));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             GameTeam gameTeam = new GameTeam(location, gameTeamType, replay);
             teams.add(gameTeam);
+            i++;
         }
     }
 
@@ -80,6 +102,18 @@ public class Game {
             }
         }
         return false;
+    }
+
+    public boolean start() {
+        runned = true;
+
+        for (GameTeam team : teams) {
+            for (Player player : team.getPlayers()) {
+                player.teleport(team.getRespawnLocation());
+            }
+            team.getReplay().start();
+        }
+        return true;
     }
 
     public List<Player> getPlayers() {
@@ -116,5 +150,9 @@ public class Game {
 
     public boolean isRunned() {
         return runned;
+    }
+
+    public BuildItems getBuildItems() {
+        return buildItems;
     }
 }
