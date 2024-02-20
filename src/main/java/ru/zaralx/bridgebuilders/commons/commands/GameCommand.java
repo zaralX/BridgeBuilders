@@ -17,10 +17,23 @@ public class GameCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args[0].equalsIgnoreCase("list")) gameList(sender);
-        if (args[0].equalsIgnoreCase("list")) gameList(sender);
 
         if (sender instanceof Player player) {
+            if (args[0].equalsIgnoreCase("join")) {
+                if (gameManager.join(player, args[1])) {
+                    player.sendMessage("Connected");
+                } else {
+                    player.sendMessage("Failed to connect");
+                }
+            }
 
+            if (args[0].equalsIgnoreCase("leave")) {
+                if (gameManager.leave(player)) {
+                    player.sendMessage("Leaved");
+                } else {
+                    player.sendMessage("Failed to leave");
+                }
+            }
         }
 
         return true;
@@ -37,6 +50,14 @@ public class GameCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         List<String> arguments = new ArrayList<>();
+
+        if (args.length == 1) {
+            arguments.addAll(List.of("list", "join", "leave"));
+        } else if (args.length == 2 && args[0].equals("join")) {
+            for (Game game : gameManager.getGames()) {
+                arguments.add(game.getId());
+            }
+        }
 
         return arguments;
     }

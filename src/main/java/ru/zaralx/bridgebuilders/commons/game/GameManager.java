@@ -2,6 +2,7 @@ package ru.zaralx.bridgebuilders.commons.game;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import ru.zaralx.bridgebuilders.BridgeBuilders;
 
 import java.io.File;
@@ -30,6 +31,46 @@ public class GameManager {
             Game newGame = new Game(gameName.toLowerCase(), configuration);
             games.add(newGame);
         }
+    }
+
+    public boolean join(Player player, Game game) {
+        return game.join(player);
+    }
+
+    public boolean leave(Player player, Game game) {
+        return game.leave(player);
+    }
+
+    public boolean join(Player player, String gameId) {
+        for (Game game : games) {
+            if (game.getPlayers().contains(player)) {
+                return false;
+            }
+        }
+        for (Game game : games) {
+            if (game.getId().equals(gameId) || game.getName().equals(gameId)) {
+                return join(player, game);
+            }
+        }
+        return false;
+    }
+
+    public boolean leave(Player player, String gameId) {
+        for (Game game : games) {
+            if ((game.getId().equals(gameId) || game.getName().equals(gameId)) && game.getPlayers().contains(player)) {
+                return leave(player, game);
+            }
+        }
+        return false;
+    }
+
+    public boolean leave(Player player) {
+        for (Game game : games) {
+            if (game.getPlayers().contains(player)) {
+                return leave(player, game);
+            }
+        }
+        return false;
     }
 
     public List<Game> getGames() {

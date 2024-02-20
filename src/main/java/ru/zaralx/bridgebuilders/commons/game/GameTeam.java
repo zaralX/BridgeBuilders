@@ -34,7 +34,19 @@ public class GameTeam {
         return players;
     }
 
+    public void addPlayer(Player player) {
+        players.add(player);
+    }
+
+    public void removePlayer(Player player) {
+        players.remove(player);
+    }
+
     public Replay getReplay() {
         return replay;
+    }
+
+    public GameTeamType getTeamType() {
+        return teamType;
     }
 }

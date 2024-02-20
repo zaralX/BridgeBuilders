@@ -56,6 +56,32 @@ public class Game {
         }
     }
 
+    public boolean join(Player player) {
+        if (getMaxPlayers() <= getPlayers().size()) return false;
+
+        GameTeam lowestTeam = teams.get(0);
+
+        for (GameTeam team : teams) {
+            if (team.getPlayers().size() < lowestTeam.getPlayers().size()) {
+                lowestTeam = team;
+            }
+        }
+
+        lowestTeam.addPlayer(player);
+        player.sendMessage("§aYou are joined in "+lowestTeam.getTeamType().getColor()+lowestTeam.getTeamType().getName());
+        return true;
+    }
+
+    public boolean leave(Player player) {
+        for (GameTeam team : teams) {
+            if (team.getPlayers().contains(player)) {
+                team.removePlayer(player);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public List<Player> getPlayers() {
         List<Player> players = new ArrayList<>();
         for (GameTeam team : teams) {
