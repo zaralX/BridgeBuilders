@@ -1,4 +1,5 @@
-In development...
+### Project paused :(
+I'm having some difficulty processing NMS requests when clicking on an NPC
 
 Example game .yml:
 ```yml
