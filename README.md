@@ -1,5 +1,4 @@
-### Project paused :(
-I'm having some difficulty processing NMS requests when clicking on an NPC
+### Project privated and moved to play.minecast.ru
 
 Example game .yml:
 ```yml
